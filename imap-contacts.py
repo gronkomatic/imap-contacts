@@ -1,19 +1,18 @@
-import imaplib
-import email
 import csv
-from datetime import datetime
-import imaplib
 import email
-import csv
+import imaplib
+import os
+import zipfile
 from datetime import datetime
+
 from tqdm import tqdm
 
 # Load settings from .jobs file
-with open('.jobs', 'r') as file:
-    settings = file.readline().strip().split(',')
+with open(".jobs", "r") as file:
+    settings = file.readline().strip().split(",")
 
 # Parse the settings
-imap_server, imap_port = settings[0].split(':')
+imap_server, imap_port = settings[0].split(":")
 username = settings[1]
 password = settings[2]
 folder = settings[3]
@@ -61,11 +60,22 @@ for num in tqdm(message_numbers[0].split()):
 imap.close()
 imap.logout()
 
+# Clean the folder name by removing double-quotes
+folder = folder.replace('"', "")
+
 # Save the email addresses to a CSV file
-csv_file = "contact_list.csv"
+csv_file = f"{folder}-{start_date.strftime('%Y-%m-%d')}-{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-contacts.csv"
 with open(csv_file, "w", newline="") as file:
     writer = csv.writer(file)
     writer.writerow(["Name", "Email Address"])
     writer.writerows(email_addresses)
 
-print(f"Contact list saved to {csv_file}")
+# Zip the CSV file
+zip_file = f"{csv_file}.zip"
+with zipfile.ZipFile(zip_file, "w") as zip:
+    zip.write(csv_file)
+
+# Remove the CSV file
+os.remove(csv_file)
+
+print(f"Contact list saved to {zip_file}")
